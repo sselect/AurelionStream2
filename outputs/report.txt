@@ -1,5 +1,7 @@
-ANÁLISIS DE VENTAS
-==================
+ANÁLISIS DE VENTAS CON CATEGORÍAS DE PRODUCTO
+==================================================
+Total de registros analizados: 343
+Categorías de producto: Limpieza, Alimentos, Bebidas
 
 Estadísticas descriptivas:
 
@@ -35,7 +37,7 @@ precio_unitario: skew=0.166, peaks_detected=10, bimodal_guess=True
 cantidad: skew=0.062, peaks_detected=3, bimodal_guess=True
 total_venta: skew=0.874, peaks_detected=9, bimodal_guess=True
 
-Correlaciones (matriz):
+Correlaciones generales (matriz):
                  precio_unitario  cantidad   importe
 precio_unitario         1.000000 -0.074483  0.679298
 cantidad               -0.074483  1.000000  0.599723
@@ -48,3 +50,47 @@ precio_unitario: 0 outliers (low=-1767.75, high=7262.25)
 cantidad: 0 outliers (low=-1.00, high=7.00)
 total_venta: 7 outliers (low=-6624.75, high=20345.25)
   Top outliers (muestra hasta 10): [24865, 23760, 22150, 21430, 21090, 20850, 20450]
+
+============================================================
+ANÁLISIS POR CATEGORÍA DE PRODUCTO
+============================================================
+
+📊 CATEGORÍA: LIMPIEZA
+   • Transacciones: 57
+   • Productos únicos: 15
+   • Ingresos totales: $436,736.00
+   • Precio unitario promedio: $2661.40
+   • Cantidad promedio: 3.0
+   • Ticket promedio: $7662.04
+
+📊 CATEGORÍA: ALIMENTOS
+   • Transacciones: 217
+   • Productos únicos: 61
+   • Ingresos totales: $1,586,402.00
+   • Precio unitario promedio: $2489.00
+   • Cantidad promedio: 3.0
+   • Ticket promedio: $7310.61
+
+📊 CATEGORÍA: BEBIDAS
+   • Transacciones: 69
+   • Productos únicos: 19
+   • Ingresos totales: $628,279.00
+   • Precio unitario promedio: $3169.26
+   • Cantidad promedio: 2.9
+   • Ticket promedio: $9105.49
+
+🏆 RANKING POR INGRESOS TOTALES:
+   1. Alimentos: $1,586,402.00 (59.8%)
+   2. Bebidas: $628,279.00 (23.7%)
+   3. Limpieza: $436,736.00 (16.5%)
+
+🔗 CORRELACIONES POR CATEGORÍA:
+   • Limpieza:
+     - Precio → Total: 0.709
+     - Cantidad → Total: 0.491
+   • Alimentos:
+     - Precio → Total: 0.706
+     - Cantidad → Total: 0.572
+   • Bebidas:
+     - Precio → Total: 0.557
+     - Cantidad → Total: 0.782

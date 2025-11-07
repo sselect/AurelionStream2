@@ -90,6 +90,175 @@ def ensure_dirs():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def analyze_by_category(df_merged, target_cols, report_lines):
+    """Análisis detallado por categoría de producto"""
+    report_lines.append('\n' + '='*60)
+    report_lines.append('ANÁLISIS POR CATEGORÍA DE PRODUCTO')
+    report_lines.append('='*60)
+    
+    # Estadísticas por categoría
+    category_stats = {}
+    categories = df_merged['categoria'].unique()
+    
+    for categoria in categories:
+        df_cat = df_merged[df_merged['categoria'] == categoria]
+        
+        stats = {
+            'transacciones': len(df_cat),
+            'productos_unicos': df_cat['id_producto'].nunique(),
+            'ingresos_totales': df_cat[target_cols['total_venta']].sum(),
+            'precio_promedio': df_cat[target_cols['precio_unitario']].mean(),
+            'cantidad_promedio': df_cat[target_cols['cantidad']].mean(),
+            'ticket_promedio': df_cat[target_cols['total_venta']].mean()
+        }
+        category_stats[categoria] = stats
+        
+        report_lines.append(f'\n📊 CATEGORÍA: {categoria.upper()}')
+        report_lines.append(f"   • Transacciones: {stats['transacciones']}")
+        report_lines.append(f"   • Productos únicos: {stats['productos_unicos']}")
+        report_lines.append(f"   • Ingresos totales: ${stats['ingresos_totales']:,.2f}")
+        report_lines.append(f"   • Precio unitario promedio: ${stats['precio_promedio']:.2f}")
+        report_lines.append(f"   • Cantidad promedio: {stats['cantidad_promedio']:.1f}")
+        report_lines.append(f"   • Ticket promedio: ${stats['ticket_promedio']:.2f}")
+    
+    # Ranking de categorías por ingresos
+    ranking = sorted(category_stats.items(), key=lambda x: x[1]['ingresos_totales'], reverse=True)
+    report_lines.append(f'\n🏆 RANKING POR INGRESOS TOTALES:')
+    for i, (cat, stats) in enumerate(ranking, 1):
+        percentage = (stats['ingresos_totales'] / sum(s['ingresos_totales'] for _, s in category_stats.items())) * 100
+        report_lines.append(f"   {i}. {cat}: ${stats['ingresos_totales']:,.2f} ({percentage:.1f}%)")
+    
+    # Correlaciones por categoría
+    report_lines.append(f'\n🔗 CORRELACIONES POR CATEGORÍA:')
+    for categoria in categories:
+        df_cat = df_merged[df_merged['categoria'] == categoria]
+        corr_cat = df_cat[[target_cols['precio_unitario'], target_cols['cantidad'], target_cols['total_venta']]].corr()
+        
+        precio_total = corr_cat.iloc[0, 2]  # precio vs total
+        cantidad_total = corr_cat.iloc[1, 2]  # cantidad vs total
+        
+        report_lines.append(f"   • {categoria}:")
+        report_lines.append(f"     - Precio → Total: {precio_total:.3f}")
+        report_lines.append(f"     - Cantidad → Total: {cantidad_total:.3f}")
+    
+    return category_stats
+
+
+def create_category_visualizations(df_merged, target_cols, category_stats):
+    """Crear visualizaciones específicas por categoría"""
+    categories = list(category_stats.keys())
+    colors_cat = sns.color_palette("Set2", len(categories))
+    
+    # 1. Gráfico de barras - Ingresos por categoría
+    plt.figure(figsize=(12, 7))
+    ingresos = [stats['ingresos_totales'] for stats in category_stats.values()]
+    bars = plt.bar(categories, ingresos, color=colors_cat, alpha=0.8, edgecolor='black', linewidth=1)
+    
+    # Agregar valores en las barras
+    for bar, ingreso in zip(bars, ingresos):
+        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(ingresos)*0.01,
+                f'${ingreso:,.0f}', ha='center', va='bottom', fontweight='bold', fontsize=11)
+    
+    plt.title('💰 Ingresos Totales por Categoría de Producto', fontsize=16, fontweight='bold', pad=20)
+    plt.xlabel('Categoría', fontsize=12, fontweight='600')
+    plt.ylabel('Ingresos Totales ($)', fontsize=12, fontweight='600')
+    plt.xticks(fontsize=11, fontweight='500')
+    plt.grid(axis='y', alpha=0.3, linestyle='--')
+    plt.tight_layout()
+    
+    p1 = FIG_DIR / 'ingresos_por_categoria.png'
+    plt.savefig(p1, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print(f"Guardado gráfico de ingresos por categoría: {p1}")
+    
+    # 2. Boxplots comparativos por categoría
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig.suptitle('📊 Distribución de Variables por Categoría', fontsize=16, fontweight='bold')
+    
+    # Precio unitario
+    sns.boxplot(data=df_merged, x='categoria', y=target_cols['precio_unitario'], 
+                palette='Set2', ax=axes[0])
+    axes[0].set_title('Precio Unitario por Categoría')
+    axes[0].set_xlabel('Categoría')
+    axes[0].set_ylabel('Precio Unitario ($)')
+    axes[0].tick_params(axis='x', rotation=45)
+    
+    # Cantidad
+    sns.boxplot(data=df_merged, x='categoria', y=target_cols['cantidad'], 
+                palette='Set2', ax=axes[1])
+    axes[1].set_title('Cantidad por Categoría')
+    axes[1].set_xlabel('Categoría')
+    axes[1].set_ylabel('Cantidad')
+    axes[1].tick_params(axis='x', rotation=45)
+    
+    # Total venta
+    sns.boxplot(data=df_merged, x='categoria', y=target_cols['total_venta'], 
+                palette='Set2', ax=axes[2])
+    axes[2].set_title('Total de Venta por Categoría')
+    axes[2].set_xlabel('Categoría')
+    axes[2].set_ylabel('Total Venta ($)')
+    axes[2].tick_params(axis='x', rotation=45)
+    
+    plt.tight_layout()
+    p2 = FIG_DIR / 'boxplots_por_categoria.png'
+    plt.savefig(p2, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print(f"Guardado boxplots por categoría: {p2}")
+    
+    # 3. Heatmap de correlaciones por categoría
+    fig, axes = plt.subplots(1, len(categories), figsize=(6*len(categories), 5))
+    if len(categories) == 1:
+        axes = [axes]
+    
+    for i, categoria in enumerate(categories):
+        df_cat = df_merged[df_merged['categoria'] == categoria]
+        corr_cat = df_cat[[target_cols['precio_unitario'], target_cols['cantidad'], target_cols['total_venta']]].corr()
+        
+        # Renombrar para mejor visualización
+        corr_cat_renamed = corr_cat.copy()
+        corr_cat_renamed.index = ['Precio', 'Cantidad', 'Total']
+        corr_cat_renamed.columns = ['Precio', 'Cantidad', 'Total']
+        
+        sns.heatmap(corr_cat_renamed, annot=True, fmt='.2f', cmap='RdBu_r', center=0,
+                    square=True, linewidths=1, ax=axes[i], cbar_kws={"shrink": .6})
+        axes[i].set_title(f'Correlaciones\n{categoria}', fontweight='bold')
+    
+    plt.suptitle('🔗 Matriz de Correlaciones por Categoría', fontsize=16, fontweight='bold', y=1.05)
+    plt.tight_layout()
+    p3 = FIG_DIR / 'correlaciones_por_categoria.png'
+    plt.savefig(p3, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print(f"Guardado heatmaps de correlaciones por categoría: {p3}")
+    
+    # 4. Análisis de participación - Gráfico de dona
+    plt.figure(figsize=(10, 8))
+    sizes = [stats['ingresos_totales'] for stats in category_stats.values()]
+    colors = sns.color_palette("Set2", len(categories))
+    
+    # Crear el gráfico de dona
+    wedges, texts, autotexts = plt.pie(sizes, labels=categories, autopct='%1.1f%%',
+                                       colors=colors, pctdistance=0.85, startangle=90)
+    
+    # Crear el efecto de dona
+    centre_circle = plt.Circle((0,0), 0.70, fc='white')
+    plt.gca().add_artist(centre_circle)
+    
+    # Agregar información en el centro
+    total_ingresos = sum(sizes)
+    plt.text(0, 0, f'TOTAL\n${total_ingresos:,.0f}', ha='center', va='center',
+             fontsize=14, fontweight='bold', color='#333333')
+    
+    plt.title('🍰 Participación por Categoría en Ingresos Totales', 
+              fontsize=16, fontweight='bold', pad=20)
+    plt.axis('equal')
+    plt.tight_layout()
+    
+    p4 = FIG_DIR / 'participacion_categoria_dona.png'
+    plt.savefig(p4, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+    print(f"Guardado gráfico de participación (dona): {p4}")
+
+
 def main():
     ensure_dirs()
 
@@ -122,23 +291,48 @@ def main():
         print("No se encontró `detalle_ventas.xlsx` ni `ventas.xlsx` con datos. Abortando.")
         sys.exit(1)
 
+    # Verificar que existe el archivo de productos para análisis por categoría
+    df_productos = dfs.get('productos')
+    if df_productos is None:
+        print("⚠️  Advertencia: No se encontró `productos.xlsx`. Análisis por categoría no estará disponible.")
+        df_merged = df_source.copy()
+        analyze_categories = False
+    else:
+        # Combinar detalle_ventas con productos para obtener categorías
+        print("✅ Integrando datos de productos para análisis por categoría...")
+        df_merged = pd.merge(df_source, df_productos[['id_producto', 'categoria', 'nombre_producto']], 
+                            on='id_producto', how='left', suffixes=('', '_prod'))
+        
+        # Usar el nombre del producto de la tabla productos (más confiable)
+        if 'nombre_producto_prod' in df_merged.columns:
+            df_merged['nombre_producto'] = df_merged['nombre_producto_prod']
+            df_merged = df_merged.drop('nombre_producto_prod', axis=1)
+        
+        # Verificar si la combinación fue exitosa
+        missing_categories = df_merged['categoria'].isna().sum()
+        if missing_categories > 0:
+            print(f"⚠️  Advertencia: {missing_categories} registros sin categoría asignada")
+        
+        analyze_categories = True
+        print(f"📊 Categorías detectadas: {df_merged['categoria'].unique()}")
+
     # find actual column names
-    price_col = find_best_col(df_source, candidate_price)
-    qty_col = find_best_col(df_source, candidate_qty)
-    total_col = find_best_col(df_source, candidate_total)
+    price_col = find_best_col(df_merged, candidate_price)
+    qty_col = find_best_col(df_merged, candidate_qty)
+    total_col = find_best_col(df_merged, candidate_total)
 
     if not any([price_col, qty_col, total_col]):
         print("No se encontraron columnas esperadas (precio/cantidad/total). Revisa los nombres de columna.")
-        print("Columnas disponibles:", list(df_source.columns))
+        print("Columnas disponibles:", list(df_merged.columns))
         sys.exit(1)
 
     # Convert to numeric when possible
     if price_col:
-        df_source[price_col] = pd.to_numeric(df_source[price_col], errors='coerce')
+        df_merged[price_col] = pd.to_numeric(df_merged[price_col], errors='coerce')
     if qty_col:
-        df_source[qty_col] = pd.to_numeric(df_source[qty_col], errors='coerce')
+        df_merged[qty_col] = pd.to_numeric(df_merged[qty_col], errors='coerce')
     if total_col:
-        df_source[total_col] = pd.to_numeric(df_source[total_col], errors='coerce')
+        df_merged[total_col] = pd.to_numeric(df_merged[total_col], errors='coerce')
 
     target_cols = {}
     if price_col:
@@ -149,13 +343,16 @@ def main():
         target_cols['total_venta'] = total_col
 
     report_lines = []
-    report_lines.append('ANÁLISIS DE VENTAS')
-    report_lines.append('==================')
+    report_lines.append('ANÁLISIS DE VENTAS CON CATEGORÍAS DE PRODUCTO')
+    report_lines.append('=' * 50)
+    report_lines.append(f'Total de registros analizados: {len(df_merged)}')
+    if analyze_categories:
+        report_lines.append(f'Categorías de producto: {", ".join(df_merged["categoria"].unique())}')
 
     # Estadísticas descriptivas
     report_lines.append('\nEstadísticas descriptivas:')
     for label, col in target_cols.items():
-        s = df_source[col]
+        s = df_merged[col]
         stats = describe_series(s)
         report_lines.append(f"\nVariable: {label} (col: {col})")
         for k, v in stats.items():
@@ -164,16 +361,16 @@ def main():
     # Distribuciones: skewness, bimodality heuristic
     report_lines.append('\nDistribuciones y sesgo:')
     for label, col in target_cols.items():
-        s = df_source[col]
+        s = df_merged[col]
         skew = float(s.skew())
         bimodal, peaks = detect_bimodal(s.dropna())
         report_lines.append(f"{label}: skew={skew:.3f}, peaks_detected={peaks}, bimodal_guess={bimodal}")
 
-    # Correlaciones
+    # Correlaciones generales
     num_cols = [c for c in target_cols.values()]
-    df_corr = df_source[num_cols].dropna()
+    df_corr = df_merged[num_cols].dropna()
     corr = df_corr.corr()
-    report_lines.append('\nCorrelaciones (matriz):')
+    report_lines.append('\nCorrelaciones generales (matriz):')
     report_lines.append(str(corr))
 
     # Specific relationships if present
@@ -187,7 +384,7 @@ def main():
     # Outliers (IQR) por variable
     report_lines.append('\nOutliers detectados (IQR):')
     for label, col in target_cols.items():
-        s = df_source[col]
+        s = df_merged[col]
         mask, low, high = iqr_outliers(s.dropna())
         outliers = s.dropna()[mask]
         report_lines.append(f"{label}: {len(outliers)} outliers (low={low:.2f}, high={high:.2f})")
@@ -195,11 +392,22 @@ def main():
         if len(outliers) > 0:
             report_lines.append(f"  Top outliers (muestra hasta 10): {outliers.sort_values(ascending=False).head(10).tolist()}")
 
+    # ===== NUEVO: ANÁLISIS POR CATEGORÍA =====
+    category_stats = None
+    if analyze_categories:
+        print("📊 Iniciando análisis por categoría...")
+        category_stats = analyze_by_category(df_merged, target_cols, report_lines)
+
     # Save report
     report_path = OUT_DIR / 'report.txt'
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(report_lines))
     print(f"Reporte guardado en {report_path}")
+
+    # ===== NUEVO: VISUALIZACIONES POR CATEGORÍA =====
+    if analyze_categories and category_stats:
+        print("🎨 Generando visualizaciones por categoría...")
+        create_category_visualizations(df_merged, target_cols, category_stats)
 
     # Configuración de estilo mejorada
     sns.set_style("whitegrid")
@@ -210,7 +418,7 @@ def main():
     fig.suptitle('Distribución de Variables Principales por Producto', fontsize=16, y=0.95)
     
     # Agrupar por producto para análisis más detallado
-    product_stats = df_source.groupby('id_producto').agg({
+    product_stats = df_merged.groupby('id_producto').agg({
         target_cols['precio_unitario']: 'mean',
         target_cols['cantidad']: 'sum',
         target_cols['total_venta']: 'sum'
@@ -228,15 +436,36 @@ def main():
     print(f"Guardado gráfico de distribuciones por producto: {p}")
 
     # 2. Boxplots por producto (TOP 10 productos más vendidos)
-    plt.figure(figsize=(15, 7))
-    top_products = df_source.groupby('id_producto')[target_cols['total_venta']].sum().nlargest(10).index
-    df_top = df_source[df_source['id_producto'].isin(top_products)]
+    plt.figure(figsize=(16, 7))
+    top_products = df_merged.groupby('id_producto')[target_cols['total_venta']].sum().nlargest(10).index
+    df_top = df_merged[df_merged['id_producto'].isin(top_products)]
     
-    sns.boxplot(data=df_top, x='id_producto', y=target_cols['precio_unitario'])
-    plt.title('Distribución de Precios por Producto (Top 10 productos por venta total)', fontsize=12)
-    plt.xlabel('ID Producto')
-    plt.ylabel('Precio Unitario')
-    plt.xticks(rotation=45)
+    # Crear etiquetas con ID y nombre del producto para el boxplot
+    if 'nombre_producto' in df_merged.columns:
+        # Obtener nombres de productos únicos para el top 10
+        product_names = df_merged[df_merged['id_producto'].isin(top_products)].groupby('id_producto')['nombre_producto'].first()
+        # Crear etiquetas
+        label_mapping = {}
+        for prod_id in top_products:
+            name = product_names.get(prod_id, f'Producto {prod_id}')
+            short_name = name[:20] + "..." if len(name) > 20 else name
+            label_mapping[prod_id] = f'{prod_id}\n{short_name}'
+        
+        # Mapear las etiquetas
+        df_top_labeled = df_top.copy()
+        df_top_labeled['producto_label'] = df_top_labeled['id_producto'].map(label_mapping)
+        
+        sns.boxplot(data=df_top_labeled, x='producto_label', y=target_cols['precio_unitario'])
+        plt.xlabel('Producto (ID + Nombre)')
+    else:
+        sns.boxplot(data=df_top, x='id_producto', y=target_cols['precio_unitario'])
+        plt.xlabel('ID Producto')
+    
+    plt.title('📊 Distribución de Precios por Producto\n(Top 10 productos por venta total)', 
+              fontsize=12, fontweight='bold')
+    plt.ylabel('Precio Unitario ($)')
+    plt.xticks(rotation=45, ha='right')
+    plt.grid(axis='y', alpha=0.3)
     plt.tight_layout()
     p = FIG_DIR / 'boxplots_por_producto.png'
     plt.savefig(p, dpi=300, bbox_inches='tight')
@@ -265,7 +494,7 @@ def main():
     if 'precio_unitario' in target_cols and 'total_venta' in target_cols:
         plt.figure(figsize=(10, 6))
         # Agregar por producto
-        product_performance = df_source.groupby('id_producto').agg({
+        product_performance = df_merged.groupby('id_producto').agg({
             target_cols['precio_unitario']: 'mean',
             target_cols['total_venta']: 'sum',
             target_cols['cantidad']: 'sum'
@@ -295,30 +524,48 @@ def main():
 
     # 5. Top 10 productos por venta total
     if 'total_venta' in target_cols:
-        plt.figure(figsize=(12, 6))
-        # Agrupar por producto
-        top_10_products = df_source.groupby('id_producto').agg({
-            target_cols['total_venta']: 'sum',
-            'nombre_producto': 'first'  # Tomar el nombre del producto
-        }).nlargest(10, target_cols['total_venta'])
+        # Agrupar por producto - ahora nombre_producto debe estar disponible
+        if 'nombre_producto' in df_merged.columns:
+            top_10_products = df_merged.groupby('id_producto').agg({
+                target_cols['total_venta']: 'sum',
+                'nombre_producto': 'first'  # Tomar el nombre del producto
+            }).nlargest(10, target_cols['total_venta'])
+            
+            # Crear etiquetas mejoradas con ID y nombre
+            labels = []
+            for idx, name in zip(top_10_products.index, top_10_products['nombre_producto']):
+                # Truncar nombre si es muy largo para mejor visualización
+                short_name = name[:25] + "..." if len(name) > 25 else name
+                labels.append(f'{idx}\n{short_name}')
+        else:
+            top_10_products = df_merged.groupby('id_producto').agg({
+                target_cols['total_venta']: 'sum'
+            }).nlargest(10, target_cols['total_venta'])
+            
+            # Crear etiquetas solo con ID si no hay nombres
+            labels = [f'ID: {idx}' for idx in top_10_products.index]
         
-        plt.figure(figsize=(14, 6))
-        bars = plt.bar(range(len(top_10_products)), top_10_products[target_cols['total_venta']])
+        plt.figure(figsize=(16, 8))  # Figura más grande para mejor legibilidad
+        colors = plt.cm.Set3(range(len(top_10_products)))  # Colores diferentes para cada barra
+        bars = plt.bar(range(len(top_10_products)), top_10_products[target_cols['total_venta']], 
+                      color=colors, alpha=0.8, edgecolor='black', linewidth=1)
         
         # Añadir etiquetas con ID y nombre del producto
-        plt.xticks(range(len(top_10_products)), 
-                  [f'ID: {idx}\n{name[:20]}' for idx, name in 
-                   zip(top_10_products.index, top_10_products['nombre_producto'])],
-                  rotation=45, ha='right')
+        plt.xticks(range(len(top_10_products)), labels, rotation=45, ha='right', fontsize=10)
         
         # Añadir valores en las barras
         for bar in bars:
             height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height,
+            plt.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
                     f'${height:,.0f}',
-                    ha='center', va='bottom')
+                    ha='center', va='bottom', fontweight='bold', fontsize=10)
         
-        plt.title('Top 10 Productos por Venta Total', fontsize=12)
+        plt.title('🏆 Top 10 Productos por Venta Total\n(ID + Nombre del Producto)', 
+                 fontsize=14, fontweight='bold', pad=20)
+        plt.xlabel('Producto (ID + Nombre)', fontsize=12, fontweight='600')
+        plt.ylabel('Total de Ventas ($)', fontsize=12, fontweight='600')
+        plt.grid(axis='y', alpha=0.3, linestyle='--')
+        plt.tight_layout()
         plt.xlabel('Producto')
         plt.ylabel('Total de Ventas ($)')
         plt.tight_layout()
@@ -336,7 +583,7 @@ def main():
         # Combinar ventas con detalle_ventas para obtener montos
         ventas_detalle = pd.merge(
             ventas_df,
-            df_source.groupby('id_venta')[target_cols['total_venta']].sum().reset_index(),
+            df_merged.groupby('id_venta')[target_cols['total_venta']].sum().reset_index(),
             on='id_venta'
         )
         
@@ -403,8 +650,8 @@ def main():
     
     # 1. Análisis de concentración de ventas
     if 'total_venta' in target_cols:
-        total_ventas = df_source[target_cols['total_venta']].sum()
-        top_10_sum = df_source.nlargest(10, target_cols['total_venta'])[target_cols['total_venta']].sum()
+        total_ventas = df_merged[target_cols['total_venta']].sum()
+        top_10_sum = df_merged.nlargest(10, target_cols['total_venta'])[target_cols['total_venta']].sum()
         concentracion = (top_10_sum / total_ventas) * 100
         report_lines.append(f"\nConcentración de ventas:")
         report_lines.append(f"- Las top 10 ventas representan el {concentracion:.1f}% del total")
@@ -412,7 +659,7 @@ def main():
     # 2. Análisis de rangos de precios
     if 'precio_unitario' in target_cols:
         price_col = target_cols['precio_unitario']
-        quantiles = df_source[price_col].quantile([0.25, 0.5, 0.75])
+        quantiles = df_merged[price_col].quantile([0.25, 0.5, 0.75])
         report_lines.append(f"\nSegmentación por precio:")
         report_lines.append(f"- Rango económico: < {quantiles[0.25]:.0f}")
         report_lines.append(f"- Rango medio: {quantiles[0.25]:.0f} - {quantiles[0.75]:.0f}")
@@ -421,8 +668,8 @@ def main():
     # 3. Patrones de cantidad
     if 'cantidad' in target_cols:
         qty_col = target_cols['cantidad']
-        mode_qty = df_source[qty_col].mode().iloc[0]
-        avg_qty = df_source[qty_col].mean()
+        mode_qty = df_merged[qty_col].mode().iloc[0]
+        avg_qty = df_merged[qty_col].mean()
         report_lines.append(f"\nPatrones de compra:")
         report_lines.append(f"- Cantidad más frecuente: {mode_qty:.0f} unidades")
         report_lines.append(f"- Promedio de unidades por venta: {avg_qty:.1f}")
