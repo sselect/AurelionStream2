@@ -1,5 +1,5 @@
 
-📌 RESUMEN EJECUTIVO DEL ANÁLISIS DE VENTAS
+## 📌 RESUMEN EJECUTIVO DEL ANÁLISIS DE VENTAS
 
 El análisis de ventas revela patrones claros en precios, cantidades y categorías de productos, permitiendo comprender dónde se genera el ingreso, qué productos impulsan el volumen y cómo se distribuye la demanda.
 
@@ -9,7 +9,8 @@ La mayor parte de los ingresos proviene de un conjunto reducido de productos (Le
 El precio tiene un impacto más fuerte en las ventas totales que la cantidad.
 Los clientes muestran hábitos de compra consistentes, permitiendo pronósticos estables.
 
-📊 MÉTRICAS CLAVE CALCULADAS
+## 📊 MÉTRICAS CLAVE CALCULADAS
+
 Métrica Resultado Interpretación
 Correlación Precio ↔ Total Venta 0.78 El precio es el principal impulsor de ingresos
 Correlación Cantidad ↔ Total Venta 0.65 El volumen también influye, pero menos
@@ -18,7 +19,8 @@ Distribución de Precio Unitario Sesgo positivo Existen productos premium que el
 Distribución de Cantidad Bimodal Dos patrones de compra: consumo básico vs. reposición
 Concentración de Ingresos Top 10 productos concentran >40% Oportunidad clara de estrategia focalizada
 
-📈 ANÁLISIS CUALITATIVO DE DISTRIBUCIÓN
+## 📈 ANÁLISIS CUALITATIVO DE DISTRIBUCIÓN
+
 Los precios se distribuyen de forma asimétrica: muchos productos económicos y pocos premium.
 Las cantidades presentan dos comportamientos:
 
@@ -29,7 +31,8 @@ Las ventas totales se concentran en tickets pequeños, con pocos tickets altos q
 Conclusión Clave:
 El negocio se sustenta en volumen + algunos productos premium estratégicos.
 
-📆 ANÁLISIS CUALITATIVO DE VENTAS MENSUALES
+## 📆 ANÁLISIS CUALITATIVO DE VENTAS MENSUALES
+
 (Basado en la columna fecha y concentración temporal)
 Las ventas muestran estacionalidad moderada, con aumentos en fines de mes y eventos promocionales.
 Se observan picos periódicos que sugieren campañas o compras corporativas.
@@ -39,7 +42,7 @@ Conclusión Clave:
 
 No hay riesgo de caída de ventas. La empresa puede proyectar y planificar inventarios con confianza.
 
-🔄 ESTACIONALIDAD Y CICLOS
+## 🔄 ESTACIONALIDAD Y CICLOS
 Ciclos semanales: mayor movimiento jueves–sábado.
 Cierre de quincena / fin de mes: picos por flujo salarial.
 Eventos especiales (ejemplo: bebidas alcohólicas en fines de semana) elevan el ticket promedio.
@@ -48,7 +51,7 @@ Implicación:
 El calendario de promociones debe alinearse con ciclos naturales de consumo, no con calendario fijo.
 
 
-💡 CONCLUSIONES ESTRATÉGICAS
+## 💡 CONCLUSIONES ESTRATÉGICAS
 
 Hallazgo Estrategia Acción
 El precio impulsa más ingresos que el volumen Optimizar precios en productos estrella antes de intentar aumentar stock
@@ -57,7 +60,8 @@ Top 10 productos concentran ingresos Proteger stock, negociar mejores proveedore
 Categorías muestran comportamiento distinto Diseñar estrategias por categoría, no generales
 Compras masivas detectadas Crear canal mayorista / corporativo con precios escalonados
 
-🚀 PRÓXIMOS PASOS SUGERIDOS
+## 🚀 PRÓXIMOS PASOS SUGERIDOS
+
 Implementar análisis RFM para segmentar clientes en:
 
 VIP
@@ -71,5 +75,6 @@ Promos jueves-sábado
 Packs de volumen en productos masivos
 Upselling en productos premium
 
-🎯 Resumen en una sola frase
+## 🎯 Resumen en una sola frase
+
 El negocio crece de manera estable, impulsado principalmente por estrategias de precio y por un pequeño grupo de productos clave. Las decisiones correctas combinan control de stock, optimización de precios y campañas alineadas con ciclos naturales de consumo.
