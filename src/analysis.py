@@ -435,43 +435,7 @@ def main():
     plt.close()
     print(f"Guardado gráfico de distribuciones por producto: {p}")
 
-    # 2. Boxplots por producto (TOP 10 productos más vendidos)
-    plt.figure(figsize=(16, 7))
-    top_products = df_merged.groupby('id_producto')[target_cols['total_venta']].sum().nlargest(10).index
-    df_top = df_merged[df_merged['id_producto'].isin(top_products)]
     
-    # Crear etiquetas con ID y nombre del producto para el boxplot
-    if 'nombre_producto' in df_merged.columns:
-        # Obtener nombres de productos únicos para el top 10
-        product_names = df_merged[df_merged['id_producto'].isin(top_products)].groupby('id_producto')['nombre_producto'].first()
-        # Crear etiquetas
-        label_mapping = {}
-        for prod_id in top_products:
-            name = product_names.get(prod_id, f'Producto {prod_id}')
-            short_name = name[:20] + "..." if len(name) > 20 else name
-            label_mapping[prod_id] = f'{prod_id}\n{short_name}'
-        
-        # Mapear las etiquetas
-        df_top_labeled = df_top.copy()
-        df_top_labeled['producto_label'] = df_top_labeled['id_producto'].map(label_mapping)
-        
-        sns.boxplot(data=df_top_labeled, x='producto_label', y=target_cols['precio_unitario'])
-        plt.xlabel('Producto (ID + Nombre)')
-    else:
-        sns.boxplot(data=df_top, x='id_producto', y=target_cols['precio_unitario'])
-        plt.xlabel('ID Producto')
-    
-    plt.title('📊 Distribución de Precios por Producto\n(Top 10 productos por venta total)', 
-              fontsize=12, fontweight='bold')
-    plt.ylabel('Precio Unitario ($)')
-    plt.xticks(rotation=45, ha='right')
-    plt.grid(axis='y', alpha=0.3)
-    plt.tight_layout()
-    p = FIG_DIR / 'boxplots_por_producto.png'
-    plt.savefig(p, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Guardado boxplot por producto: {p}")
-
     # 3. Heatmap de correlaciones mejorado
     plt.figure(figsize=(10, 8))
     mask = np.triu(np.ones_like(corr, dtype=bool))
