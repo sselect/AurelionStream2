@@ -437,22 +437,22 @@ def main():
 
     
     # 3. Heatmap de correlaciones mejorado
-    plt.figure(figsize=(10, 8))
-    mask = np.triu(np.ones_like(corr, dtype=bool))
-    sns.heatmap(corr, 
-                mask=mask,
-                annot=True,
-                cmap='RdYlBu_r',
-                fmt='.2f',
-                square=True,
-                linewidths=1,
-                cbar_kws={"shrink": .5})
-    plt.title('Matriz de Correlaciones', fontsize=12, pad=20)
-    plt.tight_layout()
-    p = FIG_DIR / 'heatmap_correlaciones.png'
-    plt.savefig(p, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Guardado heatmap: {p}")
+   # plt.figure(figsize=(10, 8))
+   # mask = np.triu(np.ones_like(corr, dtype=bool))
+   # sns.heatmap(corr, 
+   #            mask=mask,
+   #            annot=True,
+   #            cmap='RdYlBu_r',
+   #            fmt='.2f',
+   #            square=True,
+   #            linewidths=1,
+   #            cbar_kws={"shrink": .5})
+   # plt.title('Matriz de Correlaciones', fontsize=12, pad=20)
+   # plt.tight_layout()
+   # p = FIG_DIR / 'heatmap_correlaciones.png'
+   # plt.savefig(p, dpi=300, bbox_inches='tight')
+   # plt.close()
+   # print(f"Guardado heatmap: {p}")
 
     # 4. Scatter plot de productos
     if 'precio_unitario' in target_cols and 'total_venta' in target_cols:
